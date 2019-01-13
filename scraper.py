@@ -15,26 +15,26 @@ def getFoodData(site, url):
     data['name'] = tree.xpath(site['food.xpath'])[0]
     print(data['name'])
     data['category'] = data['name'].split(' ', 1)[0]
-    print(data['category'])
 
     # Parse properties
     for prop in site['properties'].split('|'):
-        print(prop)
         xpath = site['{}.xpath'.format(prop)]
         regex = site['{}.regex'.format(prop)]
         
-        data[prop] = [
-            v.group(1) if v else -9999 for v in
+        propValue =  [
+            v.group(1) if v else None for v in
             [re.search(regex, info.text) if info.text else '' for info in tree.xpath(xpath)]
         ][0]
-
-        print(data[prop])
+        if(propValue) :
+            data[prop] = propValue 
+        else :
+            print('Value for {} not found'.format(prop))
     
     return data
 
 
 def populateDataSet(site):
-
+    foods = []
     ###### Scrape data
     print('Scraping ' + site['url'])
     for date in site['date'].split('|'):
@@ -44,8 +44,10 @@ def populateDataSet(site):
             url = site['food.url'].format(category=category,date=date)
             print(url)
             data = getFoodData(site, url)
+            if(data) :
+                foods.append(data)
 
-    return data
+    return foods
 
 if __name__ == "__main__":
     import sys
@@ -54,6 +56,7 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read('config.INI', 'UTF-8')
     site = config[sys.argv[1]]
+    site['date'] = sys.argv[2]
 
     data = populateDataSet(site)
 
